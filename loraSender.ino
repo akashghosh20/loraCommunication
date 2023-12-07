@@ -1,32 +1,32 @@
 #include <RH_RF95.h>
+#include <SPI.h>
 
-RH_RF95 rf95;
+#define SX1278_CS 5 // Replace with the GPIO pin number you connected to NSS (CS)
+#define RECEIVER_ADDRESS 1 // Change this address for the specific receiver
 
-const int sensorPin = A0; // Assuming analog sensor connected to A0
-const uint8_t receiverAddress = 1; // Change this address for each receiver
+RH_RF95 rf95(SX1278_CS);
 
 void setup() {
   Serial.begin(9600);
+  while (!Serial);
+
   if (!rf95.init()) {
     Serial.println("LoRa initialization failed");
     while (1);
   }
+
+  // Set the frequency to match your LoRa module (e.g., 433.0 for SX1278)
+  rf95.setFrequency(433.0);
 }
 
 void loop() {
-  // Read sensor value
-  int sensorValue = analogRead(sensorPin);
+  const char* message = "Hello from the sender";
 
-  // Convert sensor value to a string
-  String message = "Sensor Value: " + String(sensorValue);
-
-  // Send message via LoRa with receiver address
-  rf95.setHeaderFrom(receiverAddress);
-  rf95.setHeaderTo(receiverAddress);
-  rf95.send((uint8_t*)message.c_str(), message.length());
+  rf95.setHeaderTo(RECEIVER_ADDRESS); // Set the receiver address
+  rf95.send((uint8_t*)message, strlen(message));
   rf95.waitPacketSent();
 
-  Serial.println("Sent: " + message);
+  Serial.println("Sent: " + String(message));
 
   delay(5000); // Send every 5 seconds
 }
